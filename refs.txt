@@ -1,0 +1,32 @@
+WaveGAN:
+@article{donahue2018adversarial,
+  title={Adversarial audio synthesis},
+  author={Donahue, Chris and McAuley, Julian and Puckette, Miller},
+  journal={arXiv preprint arXiv:1802.04208},
+  year={2018}
+}
+
+HiFi-GAN:
+@article{kong2020hifi,
+  title={Hifi-gan: Generative adversarial networks for efficient and high fidelity speech synthesis},
+  author={Kong, Jungil and Kim, Jaehyeon and Bae, Jaekyoung},
+  journal={arXiv preprint arXiv:2010.05646},
+  year={2020}
+}
+
+Wasserstein GAN with Gradient Penalty (WGAN-GP):
+@article{gulrajani2017improved,
+  title={Improved training of wasserstein gans},
+  author={Gulrajani, Ishaan and Ahmed, Faruk and Arjovsky, Martin and Dumoulin, Vincent and Courville, Aaron},
+  journal={arXiv preprint arXiv:1704.00028},
+  year={2017}
+}
+
+Least-squares GAN (LS-GAN):
+@inproceedings{mao2017least,
+  title={Least squares generative adversarial networks},
+  author={Mao, Xudong and Li, Qing and Xie, Haoran and Lau, Raymond YK and Wang, Zhen and Paul Smolley, Stephen},
+  booktitle={Proceedings of the IEEE international conference on computer vision},
+  pages={2794--2802},
+  year={2017}
+}

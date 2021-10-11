@@ -1,0 +1,24 @@
+{
+    "name": "inception train on footsteps",
+    "comments": "inception train on footsteps",
+    "output_path": "../output_folder",
+    "loader_config": {
+        "dbname": "footsteps",
+        "data_path": "/homes/mc309/_data/zapsplat_misc_shoes_misc_surfaces_inception_network/",
+        "criteria": {},
+        "shuffle": true,
+        "tr_val_split": 0.9
+    },
+    "transform_config": {
+        "transform": "stft",
+        "fade_out": true,
+        "fft_size": 1024,
+        "win_size": 1024,
+        "n_frames": 64,
+        "hop_size": 256,
+        "log": false,
+        "ifreq": false,
+        "sample_rate": 16000,
+        "audio_length": 8192
+    }
+}

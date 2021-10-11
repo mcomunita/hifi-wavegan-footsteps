@@ -8,11 +8,9 @@ import os
 import time
 import torch
 import shutil
-
-from utils import gradients_status
-from utils.utils_architectures import synth_samples_at_batch, synth_fad_samples_at_batch, synth_mmd_samples_at_batch, \
-                                save_wavegan_at_batch, \
-                                compute_fad_at_batch, compute_mmd_at_batch
+from utils.utils_architectures import gradients_status
+from utils.utils_training import synth_samples_at_batch, synth_fad_samples_at_batch, synth_mmd_samples_at_batch, \
+                                    compute_fad_at_batch, compute_mmd_at_batch, save_wavegan_at_batch
 
 class CCWaveGAN_GP(torch.nn.Module):
 

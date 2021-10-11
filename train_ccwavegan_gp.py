@@ -3,7 +3,7 @@ import os
 import numpy as np
 import random
 import torch.utils.tensorboard as tb
-from architectures import ccwavegan_gp
+from architectures.ccwavegan_gp import CCWaveGAN_GP
 from models import ccwavegan_gen_xs, ccwavegan_dis_xs
 from utils.utils import get_n_classes, create_date_folder, create_dataset, write_parameters
 
@@ -122,7 +122,7 @@ def train_model(
                                     betas=[d_adam_b1, d_adam_b2]
                                 )
     # build the gan
-    gan =   ccwavegan_gp.CCWaveGAN_GP(
+    gan =   CCWaveGAN_GP(
                 latent_dim,
                 generator,
                 discriminator,
@@ -163,7 +163,6 @@ def train_model(
         'n_batches': n_batches,
         'batch_size': batch_size,
         'audio_path': audio_path,
-        'checkpoints_path': checkpoints_path,
         'dataset_size': dataset_size,
         'path_to_model': path_to_model,
         'resume_training': resume_training,
@@ -214,11 +213,11 @@ def train_model(
 
 if __name__ == '__main__':
     train_model(sr = 16000,
-                # n_batches = 1,    # to test on CPU
-                # batch_size = 2,
-                n_batches = 120001,
-                batch_size = 16,
-                audio_path = '../_data/zapsplat_pack_footsteps_high_heels_1s_aligned/',
+                n_batches = 1,    # to test on CPU
+                batch_size = 2,
+                # n_batches = 120001,
+                # batch_size = 16,
+                audio_path = '../_footsteps_data/zapsplat_pack_footsteps_high_heels_1s_aligned/',
                 checkpoints_path = 'checkpoints/',
                 path_to_model = 'model.pth',
                 resume_training = False,

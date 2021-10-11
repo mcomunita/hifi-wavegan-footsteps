@@ -6,12 +6,11 @@ import soundfile
 import subprocess
 import numpy as np
 import torchopenl3
-import evaluation.utils as utils_eval
 import csv
 import pandas as pd
 import random
-
-from utils import GPU_is_available, mkdir_in_path, list_files_in_subfolders
+import utils.utils_evaluation as utils_eval
+from utils.utils import mkdir_in_path, list_files_in_subfolders
 
 def synth_samples_at_batch(
     generator,
@@ -174,11 +173,6 @@ def compute_fad_at_batch(
     batch_number,
     verbose=False,
 ):
-    if GPU_is_available:
-        device = 'cuda'
-    else:
-        device = 'cpu'
-
     real_files = list_files_in_subfolders(real_samples_path, format='.wav', verbose=verbose)
     synth_files = list_files_in_subfolders(synth_samples_path, format='.wav', verbose=verbose)
     output_path = mkdir_in_path(path=checkpoints_path, dirname='fad')
@@ -205,7 +199,7 @@ def compute_fad_at_batch(
             subprocess.check_output(
                 [
                     "sh",
-                    "shell_scripts/fad.sh",
+                    "drumgan_evaluation/shell_scripts/fad.sh",
                     "--real="+real_paths_csv,
                     "--synth="+synth_paths_csv,
                     "--output="+output_path
@@ -228,11 +222,6 @@ def compute_mmd_at_batch(
     batch_number,
     verbose=False,
 ):
-    if GPU_is_available:
-        device = 'cuda'
-    else:
-        device = 'cpu'
-
     input_repr = 'mel128'   # "linear", "mel128" (default), "mel256"
     content_type = 'env'    # “env” (environmental), “music” (default)
     embedding_size = 512    # 512, 6144 (default)

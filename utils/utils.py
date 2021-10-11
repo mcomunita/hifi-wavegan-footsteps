@@ -7,19 +7,6 @@ import os
 import sys
 from datetime import datetime
 
-
-# WGANGP Utils
-
-def update_optimizer_lr(optimizer, lr, decay):
-    for param_group in optimizer.param_groups:
-        param_group["lr"] = lr * decay
-
-
-def gradients_status(model, flag):
-    for p in model.parameters():
-        p.requires_grad = flag
-
-
 # HIFI-Gan utils
 
 def get_padding(kernel_size, dilation=1):

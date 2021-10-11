@@ -39,7 +39,7 @@ done
 # !!!       !!!         !!!
 # update path to your fad virtual environment
 # local:
-source "/Users/Marco/Documents/OneDrive - Queen Mary, University of London/PHD/REPOS/ccwavegan-hifigan-fresh/google_research_fad/.venv_fad/bin/activate"
+source "/Users/Marco/Documents/OneDrive - Queen Mary, University of London/PHD/REPOS/hifi-wavegan/google_research_fad/.venv_fad/bin/activate"
 # remote:
 # source "/homes/mc309/ccwavegan-hifigan-fresh/google_research_fad/.venv_fad/bin/activate"
 
@@ -50,7 +50,7 @@ SYNTH=`realpath "$SYNTH"`
 # !!!       !!!         !!!
 # update path to your google_research_fad repo
 # local:
-cd "/Users/Marco/Documents/OneDrive - Queen Mary, University of London/PHD/REPOS/ccwavegan-hifigan-fresh/google_research_fad"
+cd "/Users/Marco/Documents/OneDrive - Queen Mary, University of London/PHD/REPOS/hifi-wavegan/google_research_fad"
 # remote:
 # cd "/homes/mc309/ccwavegan-hifigan-fresh/google_research_fad"
 

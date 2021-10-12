@@ -99,7 +99,7 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
 
         return loss, gen_losses
         
-    def train_batch(self, x, y, batch_size, loss_weight=1.0):
+    def train_batch(self, x, y, batch_size):
         # get random indeces for the batch
         idx = torch.randint(low=0, high=x.shape[0], size=[batch_size])
         
@@ -164,7 +164,7 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
         loss_gen_s, losses_gen_s = self.generator_loss(y_ds_hat_g)
 
         # total generator loss
-        loss_gen_all = (loss_gen_s + loss_gen_f + loss_fm_s + loss_fm_f) * loss_weight
+        loss_gen_all = loss_gen_s + loss_gen_f + loss_fm_s + loss_fm_f
 
         # gen gradient update
         self.apply_zero_grad()
@@ -175,23 +175,24 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
         
         return loss_disc_all, loss_gen_all
 
-    def train(self, 
-            x, 
-            y, 
-            batch_size, 
-            batches, 
-            synth_frequency,
-            n_synth_samples,  
-            save_frequency,
-            loss_weight_frequency,
-            n_loss_weight_synth_samples,
-            sampling_rate, 
-            n_classes, 
-            checkpoints_path, 
-            override_saved_model,
-            writer,
-            audio_path,
-            verbose
+    def train(
+        self, 
+        x, 
+        y, 
+        batch_size, 
+        n_batches, 
+        synth_frequency,
+        n_synth_samples,  
+        save_frequency,
+        metrics_frequency,
+        n_synth_samples_metrics,
+        sr, 
+        n_classes, 
+        checkpoints_path, 
+        override_saved_model,
+        writer,
+        audio_path,
+        verbose
     ):
         self.generator.train()
         self.mpd.train()
@@ -200,12 +201,9 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
         d_writer = writer[0]
         g_writer = writer[1]
 
-        loss_weight = 1.0
-
-        for batch in range(batches):
+        for batch in range(n_batches):
             start_time = time.time()
-            d_loss, g_loss = self.train_batch(x, y, batch_size, loss_weight)
-            loss_weight = 1.0
+            d_loss, g_loss = self.train_batch(x, y, batch_size)
             end_time = time.time()
             time_batch = (end_time - start_time)
             print(f'Batch: {batch} == Batch size: {batch_size} == Time elapsed: {time_batch:.2f} == d_loss: {d_loss:.4f}, g_loss: {g_loss:.4f}')
@@ -227,7 +225,7 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
                     n_classes=n_classes, 
                     n_samples_per_class=n_synth_samples, 
                     latent_dim=self.latent_dim, 
-                    sr=sampling_rate
+                    sr=sr
                 )
             
             # save model every n batches
@@ -245,7 +243,7 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
                 )
             
             # compute fad every n batches
-            if batch % loss_weight_frequency == 0:
+            if batch % metrics_frequency == 0:
                 output_dir = 'fad_synth_audio'
                 
                 # synth temporary samples for fad computation
@@ -255,9 +253,9 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
                     checkpoints_path=checkpoints_path, 
                     output_dir=output_dir, 
                     n_classes=n_classes, 
-                    n_samples_per_class=n_loss_weight_synth_samples, 
+                    n_samples_per_class=n_synth_samples_metrics, 
                     latent_dim=self.latent_dim, 
-                    sr=sampling_rate
+                    sr=sr
                 )
 
                 fad = compute_fad_at_batch(
@@ -268,19 +266,14 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
                         verbose=verbose,
                     )
                 
-                # to use FAD loss uncomment this
-                loss_weight = min(2.0, fad * 0.5)
-                print(f'Loss Weight: {loss_weight:.4f}')
-                
                 # delete temporary samples
                 shutil.rmtree(os.path.join(checkpoints_path, output_dir))
 
                 # Tensorboard
                 g_writer.add_scalar("VGGish FAD", fad, batch)
-                g_writer.add_scalar("Loss Weight", loss_weight, batch)
-
+                
             # compute mmd every n batches
-            if batch % loss_weight_frequency == 0:
+            if batch % metrics_frequency == 0:
                 output_dir = 'mmd_synth_audio'
                 
                 # synth temporary samples for fad computation
@@ -290,9 +283,9 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
                     checkpoints_path=checkpoints_path, 
                     output_dir=output_dir, 
                     n_classes=n_classes, 
-                    n_samples_per_class=n_loss_weight_synth_samples, 
+                    n_samples_per_class=n_synth_samples_metrics, 
                     latent_dim=self.latent_dim, 
-                    sr=sampling_rate
+                    sr=sr
                 )
 
                 mmd = compute_mmd_at_batch(
@@ -303,16 +296,11 @@ class CCWaveGAN_CCHiFiGAN(torch.nn.Module):
                         verbose=verbose,
                     )
                 
-                # to use MMD loss uncomment this
-                # loss_weight = min(2.0, mmd * 0.5)
-                # print(f'Loss Weight: {loss_weight:.4f}')
-                
                 # delete temporary samples
                 shutil.rmtree(os.path.join(checkpoints_path, output_dir))
 
                 # Tensorboard
                 g_writer.add_scalar("OpenL3 MMD", mmd, batch)
-                # g_writer.add_scalar("Loss Weight", loss_weight, batch)
 
                 
 

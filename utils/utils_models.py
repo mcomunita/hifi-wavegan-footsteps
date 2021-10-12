@@ -18,3 +18,8 @@ def weights_init(m):
     elif isinstance(m, nn.ConvTranspose1d):
         nn.init.xavier_uniform_(m.weight, gain=1.0) # default in tf
         nn.init.constant_(m.bias, 0) # default in tf
+
+# HIFI-Gan utils
+
+def get_padding(kernel_size, dilation=1):
+    return int((kernel_size*dilation - dilation)/2)

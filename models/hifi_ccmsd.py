@@ -82,21 +82,12 @@ class CCDiscriminatorS(torch.nn.Module):
 class CCMultiScaleDiscriminator(torch.nn.Module):
     def __init__(
         self,
-        architecture_size,
         n_classes,
         verbose=False
     ):
         super(CCMultiScaleDiscriminator, self).__init__()
         self.verbose = verbose
-
-        if architecture_size == 'large':
-            self.audio_input_dim = 65536
-        elif architecture_size == 'medium':
-            self.audio_input_dim = 32768
-        elif architecture_size == 'small':
-            self.audio_input_dim = 16384
-        elif architecture_size == 'extrasmall':
-            self.audio_input_dim = 8192
+        self.audio_input_dim = 8192
 
         self.discriminators = torch.nn.ModuleList([
             CCDiscriminatorS(self.audio_input_dim, n_classes, self.verbose, use_spectral_norm=True),

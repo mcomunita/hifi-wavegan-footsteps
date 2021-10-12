@@ -24,7 +24,7 @@ class CCWaveGANDiscriminator(torch.nn.Module):
         self.alpha_lrelu = alpha_lrelu
         self.n_classes = n_classes
         self.verbose = verbose
-        self.audio_dim = 8192
+        self.audio_input_dim = 8192
         
         self.label_emb1 =   Embedding(
                                 num_embeddings=n_classes, 
@@ -33,7 +33,7 @@ class CCWaveGANDiscriminator(torch.nn.Module):
                             )
         self.label_emb2 =   Linear(
                                 n_classes * 20, 
-                                self.audio_dim,
+                                self.audio_input_dim,
                                 dtype=torch.float32
                             )
         # emb.shape = [batch_size, audio_input_dim]
@@ -62,14 +62,14 @@ class CCWaveGANDiscriminator(torch.nn.Module):
 
         # flatten to x.shape = [batch_size, fc_input_size]
 
-        self.fc1 = Linear(self.audio_dim, 1, dtype=torch.float32)
+        self.fc1 = Linear(self.audio_input_dim, 1, dtype=torch.float32)
 
         self.apply(weights_init)  
 
     def forward(self, x, labels):
         # Embedding
         emb = self.label_emb2(self.label_emb1(labels))
-        emb = emb.view(-1, 1, self.audio_dim)
+        emb = emb.view(-1, 1, self.audio_input_dim)
         if self.verbose:
             print('dis embedding shape: ', emb.shape)
             print('dis input shape: ', x.shape)
@@ -101,7 +101,7 @@ class CCWaveGANDiscriminator(torch.nn.Module):
         if self.verbose:
             print('dis conv4 out shape: ', x.shape)
         
-        x = x.view(-1, self.audio_dim)
+        x = x.view(-1, self.audio_input_dim)
         x = self.fc1(x)
         if self.verbose:
             print('dis output shape: ', x.shape)

@@ -1,19 +1,9 @@
 import torch
-import math
 import librosa
 import numpy as np
 import json
 import os
-import sys
 from datetime import datetime
-
-# HIFI-Gan utils
-
-def get_padding(kernel_size, dilation=1):
-    return int((kernel_size*dilation - dilation)/2)
-
-
-# Other Utils
 
 # get number of classes from number of folders in the audio dir
 def get_n_classes(audio_path):

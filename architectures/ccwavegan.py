@@ -12,7 +12,7 @@ from utils.utils_architectures import gradients_status
 from utils.utils_training import synth_samples_at_batch, synth_fad_samples_at_batch, synth_mmd_samples_at_batch, \
                                     compute_fad_at_batch, compute_mmd_at_batch, save_wavegan_at_batch
 
-class CCWaveGAN_GP(torch.nn.Module):
+class CCWaveGAN(torch.nn.Module):
 
     def __init__(
         self,
@@ -26,7 +26,7 @@ class CCWaveGAN_GP(torch.nn.Module):
         d_extra_steps,
         gp_weight=10.0,
     ):
-        super(CCWaveGAN_GP, self).__init__()
+        super(CCWaveGAN, self).__init__()
         self.latent_dim = latent_dim
         self.generator = generator
         self.discriminator = discriminator
@@ -178,23 +178,24 @@ class CCWaveGAN_GP(torch.nn.Module):
         
         return d_loss, g_loss
     
-    def train(self, 
-            x, 
-            y, 
-            batch_size, 
-            n_batches, 
-            synth_frequency,
-            n_synth_samples,  
-            save_frequency,
-            metrics_frequency,
-            n_synth_samples_metrics,
-            sr, 
-            n_classes, 
-            checkpoints_path, 
-            override_saved_model,
-            writer,
-            audio_path,
-            verbose
+    def train(
+        self, 
+        x, 
+        y, 
+        batch_size, 
+        n_batches, 
+        synth_frequency,
+        n_synth_samples,  
+        save_frequency,
+        metrics_frequency,
+        n_synth_samples_metrics,
+        sr, 
+        n_classes, 
+        checkpoints_path, 
+        override_saved_model,
+        writer,
+        audio_path,
+        verbose
     ):  
         self.generator.train()
         self.discriminator.train()

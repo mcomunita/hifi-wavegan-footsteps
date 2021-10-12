@@ -5,8 +5,12 @@ import itertools
 import numpy as np
 import random
 import torch.utils.tensorboard as tb
-from architectures import ccwavegan_cchifigan
-from models import ccwavegan_gen_sm, ccwavegan_gen_xs2, hifi_ccmpd, hifi_ccmsd
+from architectures.ccwavegan_cchifigan import CCWaveGAN_CCHiFiGAN
+from models import ccwavegan_gen_xs, hifi_ccmpd, hifi_ccmsd
+from models.ccwavegan_gen_xs import CCWaveGANGenerator
+from models.hifi_ccmpd import CCMultiPeriodDiscriminator
+from models.hifi_ccmsd import CCMultiScaleDiscriminator 
+from utils.utils import get_n_classes, create_date_folder, create_dataset, write_parameters
 
 # Seed
 seed = 1234
@@ -35,129 +39,121 @@ else:
 print("Device: ", device)
 
 def train_model(
-    sampling_rate=22050,
-    n_batches=10000,
-    batch_size=128,
+    sr=16000,
+    n_batches=120001,
+    batch_size=16,
     audio_path='audio/',
     checkpoints_path='checkpoints/',
-    architecture_size='large',
+    path_to_model='model.pth',
     resume_training=False,
-    path_to_model='checkpoints/model.pth',
     override_saved_model=False,
-    synth_frequency=200,
+    synth_frequency=20000,
     n_synth_samples=10,
-    save_frequency=200,
-    loss_weight_frequency=200,
-    n_loss_weight_synth_samples=10,
+    save_frequency=40000,
+    metrics_frequency=1000,
+    n_synth_samples_metrics=50,
     latent_dim=100,
-    use_batch_norm_gen=False,
-    use_batch_norm_dis=False,
-    upsample='zeros',
-    generator_learning_rate=0.00004,
-    generator_adam_b1=0.8,
-    generator_adam_b2=0.99,
-    discriminator_learning_rate=0.00004,
-    discriminator_adam_b1=0.8,
-    discriminator_adam_b2=0.99,
+    upsample_mode='zeros',
+    g_lr = 1e-4,
+    d_lr = 1e-4,
+    g_adam_b1=0.8,
+    g_adam_b2=0.99,
+    d_adam_b1=0.8,
+    d_adam_b2=0.99,
     verbose=False,
     device=device
 ):
     
-    '''
-    Train the conditional WaveGAN architecture.
+    """
+    Train Class-contidional WaveGAN architecture.
     Args:
-        sampling_rate (int): Sampling rate of the loaded/synthesised audio.
-        n_batches (int): Number of batches to train for.
-        batch_size (int): batch size (for the training process).
-        audio_path (str): Path where your training data (wav files) are store. 
-            Each class should be in a folder with the class name
-        checkpoints_path (str): Path to save the model / synth the audio during training
-        architecture_size (str) = size of the wavegan architecture. Eeach size processes the following number 
-            of audio samples: 'small' = 16384, 'medium' = 32768, 'large' = 65536"
-        resume_training (bool) = Restore the model weights from a previous session?
-        path_to_weights (str) = Where the model weights are (when resuming training)
-        override_saved_model (bool) = save the model overwriting 
-            the previous saved model (in a past epoch)?. Be aware the saved files could be large!
-        synth_frequency (int): How often do you want to synthesise a sample during training (in batches).
-        save_frequency (int): How often do you want to save the model during training (in batches).
-        latent_dim (int): Dimension of the latent space.
-        use_batch_norm (bool): Use batch normalization?
-        upsample (enum ['zeros', 'nn', 'linear', 'cubic']): upsample using transposed convolution (zeros) or interpolation (nn, linear, cubic) and convolution
-        discriminator_learning_rate (float): Discriminator learning rate.
-        generator_learning_rate (float): Generator learning rate.
-        discriminator_extra_steps (int): How many steps the discriminator is trained per step of the generator.
-        phaseshuffle_samples (int): Discriminator phase shuffle. 0 for no phases shuffle.
-    '''
+        sr (int):                   sampling rate
+        n_batches (int):            number of batches to train for.
+                                    to save model up to last batch needs to end with 1 (e.g. 20001).
+        batch_size (int):           batch size (for the training process).
+        audio_path (str):           path to training data (wav files - one folder per class).
+        checkpoints_path (str):     path to root folder where to save training session data (model, audio, tensorboard etc.).
+        path_to_model (str):        path to save/resume the model.
+        resume_training (bool)      
+        override_saved_model (bool)
+        synth_frequency (int):      how often to synthesise samples during training (in batches).
+        n_synth_samples (int):      number of samples to synthesise for each class during training.
+        save_frequency (int):       how often to save model during training (in batches).
+        metrics_frequency (int):    how often to compute metrics (fad and mmd) during training (in batches).
+        n_synth_samples_metrics(int):   number of samples per class used to compute metrics.
+        latent_dim (int):           dimension of the latent variable.
+        upsample_mode (enum ['zeros', 'nn', 'linear', 'cubic']):    upsample using transposed convolution (zeros) or 
+                                                                    interpolation (nn, linear, cubic) and convolution.
+        g_lr (float):               generator learning rate.
+        d_lr (float):               discriminator learning rate.
+        g_adam_b1 (float):          beta_1 parameter for adam generator optimizer.                       
+        g_adam_b2 (float):          beta_2 parameter for adam generator optimizer.
+        d_adam_b1 (float):          beta_1 parameter for adam discriminator optimizer.
+        d_adam_b2 (float):          beta_2 parameter for adam discriminator optimizer.
+        verbose (bool):             prints tensor dimensions at each layer.
+        device (str):               cpu or gpu.
+    """
     
     # get the number of classes from the audio folder
-    n_classes = utils.get_n_classes(audio_path)
+    n_classes = get_n_classes(audio_path)
      
     # build the generator
     torch.manual_seed(seed)
-    if architecture_size == 'small':
-        generator = ccwavegan_gen_sm.CCWaveGANGenerator(
-                        z_dim=latent_dim,
-                        n_classes=n_classes,
-                        verbose=verbose
-                    )
-    elif architecture_size == 'extrasmall':
-        generator = ccwavegan_gen_xs2.CCWaveGANGenerator(
-                        z_dim=latent_dim,
-                        n_classes=n_classes,
-                        verbose=verbose
-                    )
+    generator = CCWaveGANGenerator(
+                    latent_dim,
+                    n_classes,
+                    upsample_mode,
+                    verbose
+                )
 
     # build the discriminator
     torch.manual_seed(seed)
-    multiperiod_disc = hifi_ccmpd.CCMultiPeriodDiscriminator(
-        architecture_size=architecture_size,
-        n_classes=n_classes,
-        verbose=verbose
-    )
-    multiscale_disc = hifi_ccmsd.CCMultiScaleDiscriminator(
-        architecture_size=architecture_size,
-        n_classes=n_classes,
-        verbose=verbose
-    )
+    multiperiod_disc =  CCMultiPeriodDiscriminator(
+                            n_classes,
+                            verbose
+                        )
+    multiscale_disc =   CCMultiScaleDiscriminator(
+                            n_classes,
+                            verbose
+                        )
     
     # set the optimizers
-    # discriminator_optimizer = torch.optim.Adam(discriminator.parameters(), lr = discriminator_learning_rate)
-    # generator_optimizer = torch.optim.Adam(generator.parameters(), lr = generator_learning_rate)
-    generator_optimizer =   torch.optim.AdamW(
+    g_optimizer =   torch.optim.AdamW(
                                 generator.parameters(), 
-                                lr = generator_learning_rate, 
-                                betas=[generator_adam_b1, generator_adam_b2]
+                                lr = g_lr, 
+                                betas=[g_adam_b1, g_adam_b2]
                             )
-    discriminator_optimizer =   torch.optim.AdamW(
+    d_optimizer =   torch.optim.AdamW(
                                     itertools.chain(multiperiod_disc.parameters(), multiscale_disc.parameters()),
-                                    lr = discriminator_learning_rate, 
-                                    betas=[discriminator_adam_b1, discriminator_adam_b2]
+                                    lr = d_lr, 
+                                    betas=[d_adam_b1, d_adam_b2]
                                 )
     
     # build the gan
-    gan = ccwavegan_cchifigan.CCWaveGAN_CCHiFiGAN(
-            latent_dim=latent_dim, 
-            generator=generator,
-            multiperiod_disc=multiperiod_disc,
-            multiscale_disc=multiscale_disc,
-            n_classes = n_classes, 
-            d_optimizer = discriminator_optimizer,
-            g_optimizer = generator_optimizer,
-            device=device
-        )
+    gan =   CCWaveGAN_CCHiFiGAN(
+                latent_dim,
+                generator,
+                multiperiod_disc,
+                multiscale_disc,
+                n_classes, 
+                d_optimizer,
+                g_optimizer,
+                device
+            )
 
     # make a folder with the current date to store the current session
-    checkpoints_path = utils.create_date_folder(checkpoints_path)
+    checkpoints_path = create_date_folder(checkpoints_path)
 
     # Tensorboard
     d_writer = tb.SummaryWriter(log_dir=f'{checkpoints_path}/logdis')
     g_writer = tb.SummaryWriter(log_dir=f'{checkpoints_path}/loggen')
     
-    # create the dataset from the class folders in '/audio'
-    audio, labels = utils.create_dataset(audio_path, sampling_rate, architecture_size, checkpoints_path)
+    # create dataset
+    audio, labels = create_dataset(audio_path, sr, checkpoints_path)
     audio = torch.from_numpy(audio)
     labels = torch.from_numpy(labels)
-    print('Dataset size: ', audio.shape[0])
+    dataset_size = audio.shape[0]
+    print('Dataset size: ', dataset_size)
 
     # load the desired weights in path (if resuming training)
     if resume_training == True:
@@ -166,95 +162,89 @@ def train_model(
         generator.load_state_dict(checkpoint['g_state_dict'])
         multiperiod_disc.load_state_dict(checkpoint['mpd_state_dict'])
         multiscale_disc.load_state_dict(checkpoint['msd_state_dict'])
-        generator_optimizer.load_state_dict(checkpoint['g_optimizer_state_dict'])
-        discriminator_optimizer.load_state_dict(checkpoint['d_optimizer_state_dict'])
+        g_optimizer.load_state_dict(checkpoint['g_optimizer_state_dict'])
+        d_optimizer.load_state_dict(checkpoint['d_optimizer_state_dict'])
 
     #save the training parameters used to the checkpoints folder,
     #it makes it easier to retrieve the parameters/hyperparameters afterwards
     params = {
-        'sampling_rate': sampling_rate,
+        'sr': sr,
         'n_batches': n_batches,
         'batch_size': batch_size,
         'audio_path': audio_path,
-        'dataset_size': audio.shape[0],
-        'architecture_size': architecture_size,
-        'resume_training': resume_training,
+        'dataset_size': dataset_size,
         'path_to_model': path_to_model,
+        'resume_training': resume_training,
         'override_saved_model': override_saved_model,
         'synth_frequency': synth_frequency,
         'n_synth_samples': n_synth_samples,
         'save_frequency': save_frequency,
-        'loss_weight_frequency': loss_weight_frequency,
-        'n_loss_weight_synth_samples': n_loss_weight_synth_samples,
-        'latent_dim': latent_dim, 
-        'use_batch_norm_gen': use_batch_norm_gen,
-        'use_batch_norm_dis': use_batch_norm_dis,
-        'upsample': upsample,
-        'verbose': verbose,
+        'metrics_frequency': metrics_frequency,
+        'n_synth_samples_metrics': n_synth_samples_metrics,
+        'latent_dim': latent_dim,
+        'upsample_mode': upsample_mode,
         'device': device,
         'seed': seed,
 
-        'generator_optimizer': generator_optimizer,
-        'discriminator_optimizer': discriminator_optimizer,
+        'g_optimizer': g_optimizer,
+        'd_optimizer': d_optimizer,
 
         'generator': generator,
         'multiperiod_disc': multiperiod_disc,
         'multiscale_disc': multiscale_disc
     }
 
-    utils.write_parameters(
+    write_parameters(
         checkpoints_path,
         **params
     )
     
     #train the gan for the desired number of batches
     gan.train(
-        x = audio, 
-        y = labels, 
+        x = audio,
+        y = labels,
         batch_size = batch_size, 
-        batches = n_batches, 
+        n_batches = n_batches, 
         synth_frequency = synth_frequency, 
         n_synth_samples = n_synth_samples,
         save_frequency = save_frequency,
-        loss_weight_frequency = loss_weight_frequency,
-        n_loss_weight_synth_samples = n_loss_weight_synth_samples,
+        metrics_frequency = metrics_frequency,
+        n_synth_samples_metrics = n_synth_samples_metrics,
+        sr = sr, 
+        n_classes = n_classes,
         checkpoints_path = checkpoints_path, 
         override_saved_model = override_saved_model,
-        sampling_rate = sampling_rate, 
-        n_classes = n_classes,
-        writer=[d_writer, g_writer],
+        writer = [d_writer, g_writer],
         audio_path=audio_path,
         verbose=verbose
     )
 
 
 if __name__ == '__main__':
-    train_model(sampling_rate = 16000,
-                n_batches = 1,
-                batch_size = 2,
-                # n_batches = 120001,
-                # batch_size = 16,
-                audio_path = '../_footsteps_data/zapsplat_pack_footsteps_high_heels_1s_aligned/',
-                checkpoints_path = 'checkpoints/',
-                architecture_size = 'extrasmall',
-                path_to_model = 'model.pth',
-                resume_training = False,
-                override_saved_model = False,
-                synth_frequency = 20000,
-                n_synth_samples = 10,
-                save_frequency = 40000,
-                loss_weight_frequency=1000,
-                n_loss_weight_synth_samples=50,
-                latent_dim = 100,
-                use_batch_norm_gen = True,
-                use_batch_norm_dis = False,
-                upsample='zeros',
-                generator_learning_rate = 1e-4,
-                discriminator_learning_rate = 1e-4,
-                generator_adam_b1=0.8,
-                generator_adam_b2=0.99,
-                discriminator_adam_b1=0.8,
-                discriminator_adam_b2=0.99,
-                verbose=False,
-                device=device
+    train_model(
+        sr = 16000,
+        n_batches = 1,      # to test on CPU
+        batch_size = 2,     # to test on CPU
+        # n_batches = 120001,
+        # batch_size = 16,
+        audio_path = '../_footsteps_data/zapsplat_pack_footsteps_high_heels_1s_aligned/',
+        checkpoints_path = 'checkpoints/',
+        path_to_model = 'model.pth',
+        resume_training = False,
+        override_saved_model = False,
+        synth_frequency = 20000,
+        n_synth_samples = 10,
+        save_frequency = 40000,
+        metrics_frequency=1000,
+        n_synth_samples_metrics=50,
+        latent_dim = 100,
+        upsample_mode='zeros',
+        g_lr = 1e-4,
+        d_lr = 1e-4,
+        g_adam_b1=0.8,
+        g_adam_b2=0.99,
+        d_adam_b1=0.8,
+        d_adam_b2=0.99,
+        verbose=False,
+        device=device
     )

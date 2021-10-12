@@ -3,8 +3,9 @@ import os
 import numpy as np
 import random
 import torch.utils.tensorboard as tb
-from architectures.ccwavegan_gp import CCWaveGAN_GP
-from models import ccwavegan_gen_xs, ccwavegan_dis_xs
+from architectures.ccwavegan import CCWaveGAN
+from models.ccwavegan_gen_xs import CCWaveGANGenerator
+from models.ccwavegan_dis_xs import CCWaveGANDiscriminator
 from utils.utils import get_n_classes, create_date_folder, create_dataset, write_parameters
 
 # Seed
@@ -61,26 +62,26 @@ def train_model(
     device=device
 ):
     
-    '''
-    Train the conditional WaveGAN architecture.
+    """
+    Train Class-contidional WaveGAN architecture.
     Args:
-        sr (int):                   sampling rate (default: 16000)
+        sr (int):                   sampling rate.
         n_batches (int):            number of batches to train for.
-                                    to save model up to last batch needs to end with 1 (e.g. 20001)
+                                    to save model up to last batch needs to end with 1 (e.g. 20001).
         batch_size (int):           batch size (for the training process).
         audio_path (str):           path to training data (wav files - one folder per class).
-        checkpoints_path (str):     path to root folder where to save training session data (model, audio, tensorboard etc.)
-        path_to_model (str):        path to save/resume the model
+        checkpoints_path (str):     path to root folder where to save training session data (model, audio, tensorboard etc.).
+        path_to_model (str):        path to save/resume the model.
         resume_training (bool)      
         override_saved_model (bool)
         synth_frequency (int):      how often to synthesise samples during training (in batches).
-        n_synth_samples (int):      number of samples to synthesise for each class during training
+        n_synth_samples (int):      number of samples to synthesise for each class during training.
         save_frequency (int):       how often to save model during training (in batches).
-        metrics_frequency (int):    how often to compute metrics (fad and mmd) during training (in batches)
-        n_synth_samples_metrics(int):   number of samples per class used to compute metrics
+        metrics_frequency (int):    how often to compute metrics (fad and mmd) during training (in batches).
+        n_synth_samples_metrics(int):   number of samples per class used to compute metrics.
         latent_dim (int):           dimension of the latent variable.
         upsample_mode (enum ['zeros', 'nn', 'linear', 'cubic']):    upsample using transposed convolution (zeros) or 
-                                                                    interpolation (nn, linear, cubic) and convolution
+                                                                    interpolation (nn, linear, cubic) and convolution.
         g_lr (float):               generator learning rate.
         d_lr (float):               discriminator learning rate.
         g_adam_b1 (float):          beta_1 parameter for adam generator optimizer.                       
@@ -88,23 +89,23 @@ def train_model(
         d_adam_b1 (float):          beta_1 parameter for adam discriminator optimizer.
         d_adam_b2 (float):          beta_2 parameter for adam discriminator optimizer.
         alpha_lrelu (float):        alpha parameter for discriminator leaky relu.
-        d_extra_steps (int):        number of weights updates for discriminator for each generator updates
-        verbose (bool):             prints tensor dimensions at each layer
-        device (str):               cpu or gpu
-    '''
+        d_extra_steps (int):        number of weights updates for discriminator for each generator updates.
+        verbose (bool):             prints tensor dimensions at each layer.
+        device (str):               cpu or gpu.
+    """
     
     # get number of classes from the audio folder
     n_classes = get_n_classes(audio_path)
      
     # build generator and discriminator
     torch.manual_seed(seed)
-    generator = ccwavegan_gen_xs.CCWaveGANGenerator(
+    generator = CCWaveGANGenerator(
                     latent_dim,
                     n_classes,
                     upsample_mode,
                     verbose
                 )
-    discriminator = ccwavegan_dis_xs.CCWaveGANDiscriminator(
+    discriminator = CCWaveGANDiscriminator(
                         alpha_lrelu,
                         n_classes,
                         verbose,
@@ -122,7 +123,7 @@ def train_model(
                                     betas=[d_adam_b1, d_adam_b2]
                                 )
     # build the gan
-    gan =   CCWaveGAN_GP(
+    gan =   CCWaveGAN(
                 latent_dim,
                 generator,
                 discriminator,
@@ -179,8 +180,8 @@ def train_model(
         'device': device,
         'seed': seed,
 
-        'generator_optimizer': g_optimizer,
-        'discriminator_optimizer': d_optimizer,
+        'g_optimizer': g_optimizer,
+        'd_optimizer': d_optimizer,
 
         'generator': generator,
         'discriminator': discriminator
@@ -212,31 +213,32 @@ def train_model(
 
 
 if __name__ == '__main__':
-    train_model(sr = 16000,
-                n_batches = 1,    # to test on CPU
-                batch_size = 2,
-                # n_batches = 120001,
-                # batch_size = 16,
-                audio_path = '../_footsteps_data/zapsplat_pack_footsteps_high_heels_1s_aligned/',
-                checkpoints_path = 'checkpoints/',
-                path_to_model = 'model.pth',
-                resume_training = False,
-                override_saved_model = False,
-                synth_frequency = 20000,
-                n_synth_samples = 10,
-                save_frequency = 40000,
-                metrics_frequency = 1000,
-                n_synth_samples_metrics = 50,
-                latent_dim = 100,
-                upsample_mode = 'zeros',
-                g_lr = 1e-4,
-                d_lr = 1e-4,
-                g_adam_b1 = 0.8,
-                g_adam_b2 = 0.99,
-                d_adam_b1 = 0.8,
-                d_adam_b2 = 0.99,
-                alpha_lrelu = 0.2,
-                d_extra_steps = 5,
-                verbose = False,
-                device = device
+    train_model(
+        sr = 16000,
+        n_batches = 1,      # to test on CPU
+        batch_size = 2,     # to test on CPU
+        # n_batches = 120001,
+        # batch_size = 16,
+        audio_path = '../_footsteps_data/zapsplat_pack_footsteps_high_heels_1s_aligned/',
+        checkpoints_path = 'checkpoints/',
+        path_to_model = 'model.pth',
+        resume_training = False,
+        override_saved_model = False,
+        synth_frequency = 20000,
+        n_synth_samples = 10,
+        save_frequency = 40000,
+        metrics_frequency = 1000,
+        n_synth_samples_metrics = 50,
+        latent_dim = 100,
+        upsample_mode = 'zeros',
+        g_lr = 1e-4,
+        d_lr = 1e-4,
+        g_adam_b1 = 0.8,
+        g_adam_b2 = 0.99,
+        d_adam_b1 = 0.8,
+        d_adam_b2 = 0.99,
+        alpha_lrelu = 0.2,
+        d_extra_steps = 5,
+        verbose = False,
+        device = device
     )

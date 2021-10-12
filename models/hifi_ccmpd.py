@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch.nn import Conv2d, Embedding, Linear
 from torch.nn.utils import weight_norm, spectral_norm
-from utils import get_padding
+from utils.utils_models import get_padding
 
 class CCDiscriminatorP(torch.nn.Module):
     def __init__(
@@ -91,21 +91,12 @@ class CCDiscriminatorP(torch.nn.Module):
 class CCMultiPeriodDiscriminator(torch.nn.Module):
     def __init__(
         self,
-        architecture_size,
         n_classes,
         verbose=False
     ):
         super(CCMultiPeriodDiscriminator, self).__init__()
         self.verbose = verbose
-
-        if architecture_size == 'large':
-            self.audio_input_dim = 65536
-        elif architecture_size == 'medium':
-            self.audio_input_dim = 32768
-        elif architecture_size == 'small':
-            self.audio_input_dim = 16384
-        elif architecture_size == 'extrasmall':
-            self.audio_input_dim = 8192
+        self.audio_input_dim = 8192
             
         self.discriminators = torch.nn.ModuleList([
             CCDiscriminatorP(period=2, audio_input_dim=self.audio_input_dim, n_classes=n_classes, verbose=self.verbose),

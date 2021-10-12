@@ -1,0 +1,23 @@
+KID (with squared mmd):                                     kid
+Zapsplat Misc           VS          Zapsplat Misc           0.002
+Zapsplat Misc           VS          Zapsplat Heels          0.112
+Zapsplat Heels          VS          Zapsplat Heels          0.015
+HifiWave                VS          HifiWave                0.000
+Zapsplat Misc           VS          HifiWave                1.727
+Zapsplat Heels          VS          HifiWave                298.667
+Wavegan                 VS          Wavegan                 0.000
+Zapsplat Misc           VS          Wavegan                 1.732
+Zapsplat Heels          VS          Wavegan                 301.719
+Wavegan                 VS          HifiWave                0.007
+
+KID (with l1 distance):                                     mean        std
+Zapsplat Misc           VS          Zapsplat Misc           0.074       0.027  
+Zapsplat Misc           VS          Zapsplat Heels          1.904       0.657
+Zapsplat Heels          VS          Zapsplat Heels          0.698       0.275
+HifiWave                VS          HifiWave                0.017       0.007
+Zapsplat Misc           VS          HifiWave                0.793       0.101
+Zapsplat Heels          VS          HifiWave                1.022       0.431
+Wavegan                 VS          Wavegan                 0.115       0.051
+Zapsplat Misc           VS          Wavegan                 1.213       0.344
+Zapsplat Heels          VS          Wavegan                 1.054       0.424
+Wavegan                 VS          HifiWave                0.108       0.015

@@ -1,0 +1,5 @@
+IS:                         mean    std
+Zapsplat Misc               4.14    0.049
+Zapsplat Heels              3.22    0.028
+Hifigan                     3.41    0.036
+Wavegan                     3.23    0.063

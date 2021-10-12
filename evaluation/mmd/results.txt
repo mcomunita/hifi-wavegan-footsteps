@@ -1,0 +1,11 @@
+MMD:                                                        mean                            std
+Zapsplat Misc           VS          Zapsplat Misc           0.3158364297385224              0.05657037779196216
+Zapsplat Misc           VS          Zapsplat Heels          84.02432178862806               4.305872770598452
+Zapsplat Heels          VS          Zapsplat Heels          3.0490381976116425              0.6313064058878018
+HifiWave                VS          HifiWave                0.30267095012237155             0.07171016010591455
+Zapsplat Misc           VS          HifiWave                56.41280315193892               0.8587648963942771
+Zapsplat Heels          VS          HifiWave                53.52937281278761               2.218194471329314
+Wavegan                 VS          Wavegan                 0.28666781321345486             0.04871778625317225
+Zapsplat Misc           VS          Wavegan                 79.59800483505029               0.9056728614703082
+Zapsplat Heels          VS          Wavegan                 85.69217300796622               2.8706106676222234
+Wavegan                 VS          HifiWave                30.456599825260113              0.5826514445000079

@@ -1,0 +1,17 @@
+FAD:                                                        value
+Zapsplat Misc           VS          Zapsplat Misc           0.0
+Zapsplat Misc           VS          Zapsplat Heels          6.43
+Zapsplat Heels          VS          Zapsplat Heels          0.0
+HifiWave                VS          HifiWave                0.0
+Zapsplat Misc           VS          HifiWave                3.13           
+Zapsplat Heels          VS          HifiWave                6.06
+Wavegan                 VS          Wavegan                 0.0
+Zapsplat Misc           VS          Wavegan                 5.99
+Zapsplat Heels          VS          Wavegan                 8.59
+Wavegan                 VS          HifiWave                2.55
+
+
+
+Zapsplat Heels          VS          Zapsplat Heels          0.0
+Zapsplat Heels          VS          HifiWave                6.06
+Zapsplat Heels          VS          Wavegan                 8.59
